@@ -4,6 +4,9 @@
 #include "QEI.h"
 #define _USE_MATH_DEFINES
 #include <cmath>
+#include <chrono>
+
+using namespace std::chrono;
 
 
 class Potentiometer                                                     //Begin updated potentiometer class definition
@@ -33,12 +36,12 @@ class Potentiometer                                                     //Begin 
             currentSampleVolts = currentSampleNorm*VDD;                     //Convert this to a voltage and store that as a data member too.
         }
 
-        const float getCurrentSampleNorm(void)                              //Public member function to return the most recent normalised sample [0..1]
+        float getCurrentSampleNorm(void)                                   //Public member function to return the most recent normalised sample [0..1]
         {
             return currentSampleNorm;                                       //Return the most recent normalised sample
         }
 
-        const float getCurrentSampleVolts(void)                             //Public member function to return the most recent sampled voltage [0.. 3.3 V]
+        float getCurrentSampleVolts(void)                                   //Public member function to return the most recent sampled voltage [0.. 3.3 V]
         {
             return currentSampleVolts;                                      //Return the most recent sampled voltage
         }
@@ -55,7 +58,7 @@ class SamplingPotentiometer : public Potentiometer{
         SamplingPotentiometer(PinName p, float v, float fs)
             : Potentiometer(p, v), samplingFrequency(fs), samplingPeriod(1.0f / samplingFrequency)
     {
-        sampler.attach(callback(this, &Potentiometer::sample), samplingPeriod);
+        sampler.attach(callback(this, &Potentiometer::sample), std::chrono::microseconds((int)(samplingPeriod * 1000000)));
     }
 };
 
@@ -101,7 +104,6 @@ class BuggyWheel
         
         // 1. Ticker is now a private member of the wheel
         Ticker encoder_ticker;
-        float sample_rate;
         
         // 2. Variables modified in an ISR must be volatile
         volatile float Current_Pulses;
@@ -117,17 +119,18 @@ class BuggyWheel
 
     public:
         QEI encoder;
+        float sample_rate;
         
         // Constructor updated to take a sample rate (frequency in Hz)
         BuggyWheel(PinName pwmpin, PinName biplr, PinName Dir, PinName Chan_A, PinName Chan_B, float sample_hz = 100.0f) 
             : PWM_Output(pwmpin), 
               Bipolar(biplr), 
               DirectionPin(Dir),
-              encoder(Chan_A, Chan_B, NC, 256, QEI::X2_ENCODING),
-              sample_rate(sample_hz),
               Current_Pulses(0),
               Previous_Pulses(0),
-              absolute_pulses_prev(0)
+              absolute_pulses_prev(0),
+              encoder(Chan_A, Chan_B, NC, 256, QEI::X2_ENCODING),
+              sample_rate(sample_hz)
         {
             r = 0.0778;
             pi = 3.14159265358979323846;
@@ -144,7 +147,7 @@ class BuggyWheel
             
             // Attach the ticker callback during setup. 
             // Period is 1.0 / frequency.
-            encoder_ticker.attach(callback(this, &BuggyWheel::Measure_Pulses), 1.0f / sample_rate);
+            encoder_ticker.attach(callback(this, &BuggyWheel::Measure_Pulses), std::chrono::microseconds((int)(1000000.0f / sample_rate)));
         }
         
         int GetPulses()
@@ -232,7 +235,7 @@ void Forward(int time)
     LeftWheel.SetDuty(0.344);
     RightWheel.Move(r_adjustment);
     LeftWheel.Move(l_adjustment);
-    wait_ms(time);
+    ThisThread::sleep_for(milliseconds(time));
     RightWheel.Brake();
     LeftWheel.Brake();
 }
@@ -245,7 +248,7 @@ void Turn_Right(int time)
     LeftWheel.SetDuty(0.35);
     RightWheel.Move(r_adjustment);
     LeftWheel.Move(l_adjustment);
-    wait_ms(time);
+    ThisThread::sleep_for(milliseconds(time));
     RightWheel.Brake();
     LeftWheel.Brake();
 }
@@ -258,7 +261,7 @@ void Turn_Left(int time)
     LeftWheel.SetDuty(0.65);
     RightWheel.Move(r_adjustment);
     LeftWheel.Move(l_adjustment);
-    wait_ms(time - 50);
+    ThisThread::sleep_for(milliseconds(time - 50));
     RightWheel.Brake();
     LeftWheel.Brake();
 }
@@ -271,7 +274,7 @@ void Turn_Around(int time)
     LeftWheel.SetDuty(0.35);
     RightWheel.Move(r_adjustment);
     LeftWheel.Move(l_adjustment);
-    wait_ms(time * 2);
+    ThisThread::sleep_for(milliseconds(time * 2));
     RightWheel.Brake();
     LeftWheel.Brake();
 }
@@ -352,18 +355,17 @@ void encoder_text(float L_Pulses, float R_Pulses)
     LCD.printf("m/s: %0.2f   %0.2f ", L_Vel, R_Vel);
 }
 
-Serial hm10(PA_11, PA_12);
+BufferedSerial hm10(PA_11, PA_12, 9600);
 
 char c;
 void BluetoothConnectionDisplay()
 {
     LCD.cls();
-    hm10.baud(9600);
 
     while(1) {
         LCD.locate(1, 2);
         if(hm10.readable()){
-            c = hm10.getc(); //read a single character
+            hm10.read(&c, 1); //read a single character
             if(c == 'A')
             {
                 LCD.printf("Pulse received: %c", c);
@@ -409,7 +411,7 @@ int main()
             RightWheel.ChangeDuty();                 // speed control for right wheel
             LeftWheel.ChangeDuty();
             LCD_Text(duty_R, duty_L);
-            wait(0.05);
+            ThisThread::sleep_for(50ms);
             break;
         case PULSES:
             duty_R = Right_P.getCurrentSampleNorm();
@@ -421,7 +423,7 @@ int main()
             L_Current_Pulses = LeftWheel.Tell_CPulses();
             R_Current_Pulses = RightWheel.Tell_CPulses();
             encoder_text(L_Current_Pulses, R_Current_Pulses);
-            wait(0.03);
+            ThisThread::sleep_for(30ms);
             break;
         case BLUETOOTH:
             //square movement test

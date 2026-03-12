@@ -24,12 +24,14 @@
 #include "mbed.h"
 #include "stdio.h"
 #include "Small_7.h"
+#include <chrono>
+using namespace std::chrono;
 
 #define BPP    1       // Bits per pixel
 
 
 C12832::C12832(PinName mosi, PinName sck, PinName reset, PinName a0, PinName ncs, const char* name)
-    : _spi(mosi,NC,sck),_reset(reset),_A0(a0),_CS(ncs),GraphicsDisplay(name)
+    : GraphicsDisplay(name),_spi(mosi,NC,sck),_reset(reset),_A0(a0),_CS(ncs)
 {
     orientation = 1;
     draw_mode = NORMAL;
@@ -103,7 +105,7 @@ void C12832::lcd_reset()
     _reset = 0;                        // display reset
     wait_us(50);
     _reset = 1;                       // end reset
-    wait_ms(5);
+    ThisThread::sleep_for(5ms);
 
     /* Start Initial Sequence ----------------------------------------------------*/
 
