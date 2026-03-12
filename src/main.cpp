@@ -55,7 +55,7 @@ class SamplingPotentiometer : public Potentiometer{
         SamplingPotentiometer(PinName p, float v, float fs)
             : Potentiometer(p, v), samplingFrequency(fs), samplingPeriod(1.0f / samplingFrequency)
     {
-        sampler.attach(callback(this, &Potentiometer::sample), std::chrono::microseconds((int)(samplingPeriod * 1000000)));
+        sampler.attach(callback(this, &Potentiometer::sample), samplingPeriod);
     }
 };
 
@@ -143,8 +143,8 @@ class BuggyWheel
             PWM_Output.write(duty);
             
             // Attach the ticker callback during setup. 
-            // Period is 1.0 / frequency.
-            encoder_ticker.attach(callback(this, &BuggyWheel::Measure_Pulses), std::chrono::microseconds((int)(1000000.0f / sample_rate)));
+            // Period is 1.0 / frequency (in seconds as float).
+            encoder_ticker.attach(callback(this, &BuggyWheel::Measure_Pulses), 1.0f / sample_rate);
         }
         
         int GetPulses()
@@ -232,7 +232,7 @@ void Forward(int time)
     LeftWheel.SetDuty(0.344);
     RightWheel.Move(r_adjustment);
     LeftWheel.Move(l_adjustment);
-    wait_us(time * 1000);
+    wait_ms(time);
     RightWheel.Brake();
     LeftWheel.Brake();
 }
@@ -245,7 +245,7 @@ void Turn_Right(int time)
     LeftWheel.SetDuty(0.35);
     RightWheel.Move(r_adjustment);
     LeftWheel.Move(l_adjustment);
-    wait_us(time * 1000);
+    wait_ms(time);
     RightWheel.Brake();
     LeftWheel.Brake();
 }
@@ -258,7 +258,7 @@ void Turn_Left(int time)
     LeftWheel.SetDuty(0.65);
     RightWheel.Move(r_adjustment);
     LeftWheel.Move(l_adjustment);
-    wait_us((time - 50) * 1000);
+    wait_ms(time - 50);
     RightWheel.Brake();
     LeftWheel.Brake();
 }
@@ -271,7 +271,7 @@ void Turn_Around(int time)
     LeftWheel.SetDuty(0.35);
     RightWheel.Move(r_adjustment);
     LeftWheel.Move(l_adjustment);
-    wait_us(time * 2 * 1000);
+    wait_ms(time * 2);
     RightWheel.Brake();
     LeftWheel.Brake();
 }
@@ -352,7 +352,7 @@ void encoder_text(float L_Pulses, float R_Pulses)
     LCD.printf("m/s: %0.2f   %0.2f ", L_Vel, R_Vel);
 }
 
-BufferedSerial hm10(PA_11, PA_12, 9600);
+Serial hm10(PA_11, PA_12);
 
 char c;
 void BluetoothConnectionDisplay()
@@ -362,7 +362,7 @@ void BluetoothConnectionDisplay()
     while(1) {
         LCD.locate(1, 2);
         if(hm10.readable()){
-            hm10.read(&c, 1); //read a single character
+            c = hm10.getc(); //read a single character
             if(c == 'A')
             {
                 LCD.printf("Pulse received: %c", c);
@@ -390,6 +390,9 @@ int main()
     float RPM_R, RPM_L;
     float R_Current_Pulses = 0, L_Current_Pulses = 0;
 
+    //set bluetooth baud rate
+    hm10.baud(9600);
+
     //fire interrupt
     InterruptIn fire(D4);
     fire.rise(&fireISR);
@@ -408,7 +411,7 @@ int main()
             RightWheel.ChangeDuty();                 // speed control for right wheel
             LeftWheel.ChangeDuty();
             LCD_Text(duty_R, duty_L);
-            wait_us(50000);
+            wait_ms(50);
             break;
         case PULSES:
             duty_R = Right_P.getCurrentSampleNorm();
@@ -420,7 +423,7 @@ int main()
             L_Current_Pulses = LeftWheel.Tell_CPulses();
             R_Current_Pulses = RightWheel.Tell_CPulses();
             encoder_text(L_Current_Pulses, R_Current_Pulses);
-            wait_us(30000);
+            wait_ms(30);
             break;
         case BLUETOOTH:
             //square movement test
