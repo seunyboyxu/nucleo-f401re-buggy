@@ -24,8 +24,6 @@
 #include "mbed.h"
 #include "stdio.h"
 #include "Small_7.h"
-#include <chrono>
-using namespace std::chrono;
 
 #define BPP    1       // Bits per pixel
 
@@ -105,7 +103,7 @@ void C12832::lcd_reset()
     _reset = 0;                        // display reset
     wait_us(50);
     _reset = 1;                       // end reset
-    ThisThread::sleep_for(5ms);
+    wait_us(5000);
 
     /* Start Initial Sequence ----------------------------------------------------*/
 

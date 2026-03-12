@@ -4,9 +4,6 @@
 #include "QEI.h"
 #define _USE_MATH_DEFINES
 #include <cmath>
-#include <chrono>
-
-using namespace std::chrono;
 
 
 class Potentiometer                                                     //Begin updated potentiometer class definition
@@ -235,7 +232,7 @@ void Forward(int time)
     LeftWheel.SetDuty(0.344);
     RightWheel.Move(r_adjustment);
     LeftWheel.Move(l_adjustment);
-    ThisThread::sleep_for(milliseconds(time));
+    wait_us(time * 1000);
     RightWheel.Brake();
     LeftWheel.Brake();
 }
@@ -248,7 +245,7 @@ void Turn_Right(int time)
     LeftWheel.SetDuty(0.35);
     RightWheel.Move(r_adjustment);
     LeftWheel.Move(l_adjustment);
-    ThisThread::sleep_for(milliseconds(time));
+    wait_us(time * 1000);
     RightWheel.Brake();
     LeftWheel.Brake();
 }
@@ -261,7 +258,7 @@ void Turn_Left(int time)
     LeftWheel.SetDuty(0.65);
     RightWheel.Move(r_adjustment);
     LeftWheel.Move(l_adjustment);
-    ThisThread::sleep_for(milliseconds(time - 50));
+    wait_us((time - 50) * 1000);
     RightWheel.Brake();
     LeftWheel.Brake();
 }
@@ -274,7 +271,7 @@ void Turn_Around(int time)
     LeftWheel.SetDuty(0.35);
     RightWheel.Move(r_adjustment);
     LeftWheel.Move(l_adjustment);
-    ThisThread::sleep_for(milliseconds(time * 2));
+    wait_us(time * 2 * 1000);
     RightWheel.Brake();
     LeftWheel.Brake();
 }
@@ -411,7 +408,7 @@ int main()
             RightWheel.ChangeDuty();                 // speed control for right wheel
             LeftWheel.ChangeDuty();
             LCD_Text(duty_R, duty_L);
-            ThisThread::sleep_for(50ms);
+            wait_us(50000);
             break;
         case PULSES:
             duty_R = Right_P.getCurrentSampleNorm();
@@ -423,7 +420,7 @@ int main()
             L_Current_Pulses = LeftWheel.Tell_CPulses();
             R_Current_Pulses = RightWheel.Tell_CPulses();
             encoder_text(L_Current_Pulses, R_Current_Pulses);
-            ThisThread::sleep_for(30ms);
+            wait_us(30000);
             break;
         case BLUETOOTH:
             //square movement test
