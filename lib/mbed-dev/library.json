@@ -1,0 +1,25 @@
+{
+    "name": "mbed-dev",
+    "version": "165.0.0",
+    "description": "Mbed 2 (mbed-dev) for NUCLEO_F401RE - precompiled with headers",
+    "keywords": ["mbed", "mbed2", "arm", "stm32"],
+    "frameworks": "*",
+    "platforms": "ststm32",
+    "build": {
+        "flags": [
+            "-Ilib/mbed-dev",
+            "-Ilib/mbed-dev/drivers",
+            "-Ilib/mbed-dev/platform",
+            "-Ilib/mbed-dev/hal",
+            "-Ilib/mbed-dev/cmsis",
+            "-Ilib/mbed-dev/cmsis/TARGET_CORTEX_M",
+            "-Ilib/mbed-dev/target_headers",
+            "-Ilib/mbed-dev/targets/TARGET_STM",
+            "-Ilib/mbed-dev/targets/TARGET_STM/TARGET_STM32F4",
+            "-Ilib/mbed-dev/targets/TARGET_STM/TARGET_STM32F4/TARGET_STM32F401xE",
+            "-Ilib/mbed-dev/targets/TARGET_STM/TARGET_STM32F4/TARGET_STM32F401xE/TARGET_NUCLEO_F401RE",
+            "-Ilib/mbed-dev/targets/TARGET_STM/TARGET_STM32F4/TARGET_STM32F401xE/device"
+        ],
+        "libArchive": false
+    }
+}
